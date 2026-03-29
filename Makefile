@@ -44,7 +44,7 @@ test-prod:
 
 coverage:
 	@echo "▶ Running tests with coverage..."
-	@clojure -M:test -m kaocha.runner --plugin kaocha.plugin/cloverage --cloverage-output target/coverage
+	@clojure -M:test -m kaocha.runner --plugin kaocha.plugin/cloverage --cov-output target/coverage
 	@echo "✅ Coverage report: target/coverage/index.html"
 
 fmt-check:
