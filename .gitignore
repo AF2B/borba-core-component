@@ -2,3 +2,9 @@
 .idea/
 *.iml
 target/
+.idea
+.lsp
+.clj-kondo
+borba-core-component.iml
+.calva
+.nrepl-port
