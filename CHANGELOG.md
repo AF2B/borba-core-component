@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-06
+
 ### Added
 
 - `:borba/lifecycle`, a component that holds the state of the service (`:starting`, `:ready`, `:draining`, `:stopped`), and
@@ -51,6 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 First release: the `:borba/core` Integrant component, which prints a startup banner and a stop message.
 
-[Unreleased]: https://github.com/AF2B/borba-core-component/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/AF2B/borba-core-component/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/AF2B/borba-core-component/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/AF2B/borba-core-component/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AF2B/borba-core-component/releases/tag/v1.0.0
