@@ -1,55 +1,83 @@
 (ns borba.core.main
-  "Main entry point for Borba microservices.
+  "The entry point of a Borba service:
 
-   Reads system configuration from config.edn on the classpath via Aero,
-   requires all namespaces listed in :service/namespaces (so their
-   defmethod registrations are loaded), then starts the Integrant system.
+     clojure -M -m borba.core.main prod
 
-   Registers a JVM shutdown hook that calls ig/halt! cleanly.
+   It reads config.edn for the profile (the first argument, or the PROFILE
+   environment variable), starts the system, and stops it cleanly when the
+   process is told to terminate. A service that cannot start exits with a
+   status the caller can act on."
+  (:gen-class)
+  (:require
+   [borba.core.config :as config]
+   [borba.core.system :as system]
+   [clojure.tools.logging :as log]))
 
-   ── Usage ────────────────────────────────────────────────────────────────────
+(set! *warn-on-reflection* true)
 
-     clojure -M:run [profile]
+(def ^:private profile-env-var "PROFILE")
+(def ^:private ^String shutdown-thread-name "borba-shutdown")
+(def ^:private exit-failed-to-start 1)
+(def ^:private exit-no-profile 2)
 
-   Profile defaults to 'stag' if not provided.
+(defn resolve-profile
+  "Returns the profile to run with as a keyword, taken from the first argument
+   or else from the PROFILE environment variable, or nil when there is none.
+   - args: the command line arguments
+   - environment: a map of environment variable names to values"
+  [args
+   environment]
+  (some-> (or (first args) (get environment profile-env-var))
+          not-empty
+          keyword))
 
-   ── :service/namespaces ──────────────────────────────────────────────────────
+(defn shutdown-hook
+  "Returns the thread the JVM runs when the process is terminated, which stops
+   the running system."
+  []
+  (Thread. (reify Runnable
+             (run [_] (system/stop!)))
+           shutdown-thread-name))
 
-   In system/base.edn, declare every namespace that contains defmethod
-   registrations (ig/init-key, ig/halt-key!, handlers/handler, etc.):
+(defn run
+  "Starts the service and returns its system. Unless told otherwise it
+   registers a hook that stops the system when the process is terminated.
+   - profile: the profile to read the configuration for
+   - source: where the configuration comes from (default: config.edn on the
+     classpath)
+   - hook?: whether to stop the system when the process terminates (default
+     true)"
+  [{:keys [profile source hook?] :or {hook? true}}]
+  (let [loaded (if source
+                 (config/read-config source profile)
+                 (config/load-config profile))
+        system (system/start! loaded)]
+    (when hook?
+      (.addShutdownHook (Runtime/getRuntime) (shutdown-hook)))
+    system))
 
-     :service/namespaces
-     [borba.core
-      borba.sql-client
-      borba.redis
-      borba.kafka-producer
-      borba.kafka-consumer
-      borba.event-store
-      borba.handlers.registry
-      borba.handlers.component
-      borba.routes.component
-      borba.server.component
-      borba.railway
-      com.example.my-service.handlers.http.routes
-      com.example.my-service.events.consumer]"
-  (:require [integrant.core :as ig]
-            [aero.core :as aero]
-            [clojure.java.io :as io]))
+(defn start
+  "Starts the service as the command line asks and returns what happened: the
+   system when it started, or a map with the :exit status when it could not.
+   - args: the command line arguments
+   - environment: a map of environment variable names to values"
+  [args
+   environment]
+  (if-let [profile (resolve-profile args environment)]
+    (try
+      (run {:profile profile})
+      (catch Throwable cause
+        (log/error cause "the service failed to start")
+        {:exit exit-failed-to-start}))
+    (do (log/error "no profile: pass one as the first argument or set"
+                   profile-env-var)
+        {:exit exit-no-profile})))
 
-(defn -main [& args]
-  (let [profile (keyword (or (first args) "stag"))
-        config  (aero/read-config (io/resource "config.edn") {:profile profile})
-        nss     (:service/namespaces config)]
-    (println (str "▶  Loading namespaces for profile: " (name profile)))
-    (doseq [ns-sym nss]
-      (require ns-sym))
-    (println (str "▶  Starting system..."))
-    (let [system (ig/init (:ig/system config))]
-      (.addShutdownHook
-       (Runtime/getRuntime)
-       (Thread.
-        #(do (println "\n⏹  Shutdown signal received. Halting system...")
-             (ig/halt! system)
-             (println "⏹  System halted."))
-        "borba-shutdown"))
-      system)))
+(defn -main
+  "Starts the service and keeps the process alive until it is terminated.
+   - args: the profile, as the first argument"
+  [& args]
+  (let [result (start args (System/getenv))]
+    (if-let [status (:exit result)]
+      (System/exit status)
+      @(promise))))
