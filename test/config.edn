@@ -1,0 +1,8 @@
+;; The configuration the tests of borba.core.main start from.
+{:service/namespaces [borba.core.sample]
+
+ :ig/system
+ #profile {:test   {:borba/lifecycle {}
+                    :borba/core      {:service-name "sample"
+                                      :lifecycle    #ig/ref :borba/lifecycle}}
+           :broken {:borba.core.sample/boom {}}}}
