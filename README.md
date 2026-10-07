@@ -14,7 +14,7 @@ sending it requests, then halts the rest of the system in the reverse order it s
 ```clojure
 io.github.af2b/borba-core-component
 {:git/url "https://github.com/AF2B/borba-core-component"
- :git/tag "v2.0.0"
+ :git/tag "v2.1.0"
  :git/sha "<the commit of the tag, printed in the release notes>"}
 ```
 
@@ -28,7 +28,7 @@ without one, `tools.logging` writes through `java.util.logging`.
 ```clojure
 {:paths   ["resources"]
  :deps    {io.github.af2b/borba-core-component {:git/url "https://github.com/AF2B/borba-core-component"
-                                                :git/tag "v2.0.0"
+                                                :git/tag "v2.1.0"
                                                 :git/sha "..."}
            org.slf4j/slf4j-simple              {:mvn/version "2.0.13"}}
  :aliases {:run {:main-opts ["-m" "borba.core.main"]}}}
