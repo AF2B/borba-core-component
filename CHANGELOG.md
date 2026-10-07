@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- A system with a component that nothing registered, because its namespace is not in `:service/namespaces`, fails the start with
+  `:borba.core.system/unregistered-component`. The message names the key, and the namespace that registers it when it is one of the
+  Borba libraries (`known-components`); Integrant reported it as `No such namespace`, which says nothing about the key.
+
 ## [2.0.0] - 2026-10-06
 
 ### Added

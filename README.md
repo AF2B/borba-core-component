@@ -113,6 +113,13 @@ instead of surfacing later as a missing method:
  :ig/system {...}}
 ```
 
+A component of the system that nothing registered, because its namespace is not listed, fails the start the same way: it names the
+key and, when the key is one of the Borba libraries, the namespace that registers it.
+
+```
+no component is registered for :server/http: the namespace that registers it is not loaded; list borba.server.component under :service/namespaces
+```
+
 ## Components
 
 ### `:borba/lifecycle`
@@ -245,6 +252,7 @@ Mistakes of configuration and of use throw `ex-info`, with the code under `:erro
 | `:borba.core.config/config-not-found` | There is no `config.edn` on the classpath, or no source to read |
 | `:borba.core.system/no-system` | The configuration has no `:ig/system` map |
 | `:borba.core.system/namespace-not-found` | A namespace of `:service/namespaces` cannot be loaded (`:namespace` in the data) |
+| `:borba.core.system/unregistered-component` | A key of `:ig/system` has no component registered, because its namespace is not loaded (`:key` in the data, and `:namespace` when it is one of the Borba libraries) |
 | `:borba.core.system/already-running` | `start!` was called while a system is running |
 | `:borba.core.lifecycle/invalid-transition` | A move against the direction of the lifecycle (`:from` and `:to` in the data) |
 
@@ -257,6 +265,7 @@ Mistakes of configuration and of use throw `ex-info`, with the code under `:erro
 | | `resolve-profile`, `shutdown-hook` | The profile of the command line, and the hook thread |
 | `borba.core.system` | `start!`, `stop!`, `current` | Run one system and stop it |
 | | `init`, `halt`, `require-namespaces` | Start or halt a system without keeping it |
+| | `known-components` | The namespace of each component of the Borba libraries, for the message of a component that is not registered |
 | `borba.core.config` | `load-config`, `read-config` | Read `config.edn`, or any source Aero reads, for a profile |
 | | `deep-merge` | Merge maps recursively |
 | `borba.core.lifecycle` | `create`, `state` | Make a lifecycle, and read its state |
