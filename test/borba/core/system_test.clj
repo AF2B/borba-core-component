@@ -3,6 +3,7 @@
    [borba.core.logging :as logging]
    [borba.core.sample :as sample]
    [borba.core.system :as system]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [integrant.core :as ig]))
 
@@ -44,6 +45,45 @@
                                :borba.core.sample/boom  {:alpha alpha}}}]
       (is (thrown? clojure.lang.ExceptionInfo (system/init failing)))
       (is (= [:alpha-started :alpha-halted] @sample/events)))))
+
+(deftest unregistered-component-test
+  (testing "a key that no namespace registered says so, and which key it is"
+    (let [thrown (try (system/init {:ig/system {:nowhere.at.all/thing {}}})
+                      (catch clojure.lang.ExceptionInfo e e))]
+      (is (= {:error     :borba.core.system/unregistered-component
+              :key       :nowhere.at.all/thing
+              :namespace nil}
+             (ex-data thrown)))
+      (is (str/includes? (ex-message thrown) ":nowhere.at.all/thing"))
+      (is (str/includes? (ex-message thrown) ":service/namespaces"))
+      (is (some? (ex-cause thrown)))))
+
+  (testing "a namespace that is loaded and has no such function says so too"
+    (is (= :borba.core.system/unregistered-component
+           (error-code #(system/init
+                         {:ig/system {:clojure.string/nothing-of-this-name
+                                      {}}})))))
+
+  (testing "names the namespace of a component of the Borba libraries"
+    (let [thrown (try (system/init {:ig/system {:server/http {}}})
+                      (catch clojure.lang.ExceptionInfo e e))]
+      (is (= 'borba.server.component (:namespace (ex-data thrown))))
+      (is (str/includes? (ex-message thrown) "borba.server.component"))))
+
+  (testing "does not change the failure of a component that is registered"
+    (let [thrown (try (system/init {:ig/system {:borba.core.sample/boom {}}})
+                      (catch clojure.lang.ExceptionInfo e e))]
+      (is (nil? (:error (ex-data thrown))))
+      (is (= :integrant.core/build-threw-exception
+             (:reason (ex-data thrown))))))
+
+  (testing "halts what had started before it fails"
+    (is (= :borba.core.system/unregistered-component
+           (error-code #(system/init
+                         {:ig/system {:borba.core.sample/alpha {}
+                                      :nowhere.at.all/thing
+                                      {:alpha alpha}}}))))
+    (is (some #{:alpha-halted} @sample/events))))
 
 (deftest namespaces-test
   (testing "loads the namespaces a configuration lists"
