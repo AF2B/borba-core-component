@@ -15,7 +15,7 @@ permissions:
 jobs:
   scheduled:
     name: Scheduled
-    uses: AF2B/borba-tooling/.github/workflows/clojure-lib-scheduled.yml@2a1e1c4cf9d40054c784960b0f50040eb156aca6 # v0.1.2
+    uses: AF2B/borba-tooling/.github/workflows/clojure-lib-scheduled.yml@c91f13d33e8d6d2deca8c3d0dee2e08458984711 # v0.1.5
     permissions:
       contents: read
       issues: write
